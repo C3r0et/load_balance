@@ -117,8 +117,8 @@ log_info "Node.js dependencies berhasil diinstall."
 
 # Install Playwright browser (Chromium) dan dependencies OS-nya
 log_info "Install Playwright Chromium browser..."
-PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers npx playwright install chromium
-PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers npx playwright install-deps chromium
+PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers npx --yes playwright install chromium
+PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers npx --yes playwright install-deps chromium
 
 log_info "Playwright Chromium berhasil diinstall di /opt/playwright-browsers"
 

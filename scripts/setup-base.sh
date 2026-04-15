@@ -126,7 +126,7 @@ log_info "ZRAM aktif. Ukuran efektif swap: ~${ZRAM_SIZE_MB}MB (kompresi dari RAM
 log_section "TAHAP 5: Mount /tmp ke RAM (tmpfs)"
 
 if ! grep -q "tmpfs /tmp" /etc/fstab; then
-  echo "tmpfs /tmp tmpfs defaults,noatime,nosuid,nodev,noexec,size=256m 0 0" >> /etc/fstab
+  echo "tmpfs /tmp tmpfs defaults,noatime,nosuid,nodev,size=256m 0 0" >> /etc/fstab
   mount -o remount /tmp 2>/dev/null || true
   log_info "tmpfs /tmp berhasil dikonfigurasi (256MB di RAM)."
 else
