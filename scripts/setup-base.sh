@@ -26,14 +26,25 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # ==============================================================================
-# TAHAP 1: Update Sistem
+# TAHAP 1: Konfigurasi Repository & Update Sistem
 # ==============================================================================
-log_section "TAHAP 1: Update & Upgrade Sistem"
+log_section "TAHAP 1: Konfigurasi Repo & Update Sistem"
+
+# Pastikan sources.list menggunakan Debian 13 (Trixie)
+cat > /etc/apt/sources.list << 'EOF'
+deb http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
+deb http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
+deb http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
+EOF
+
 apt-get update -y
 apt-get upgrade -y
-apt-get install -y curl git ffmpeg build-essential ca-certificates gnupg lsb-release
+apt-get install -y \
+    curl git ffmpeg build-essential ca-certificates gnupg lsb-release \
+    net-tools htop zram-tools openssh-server \
+    procps psmisc unzip wget
 
-log_info "Sistem berhasil diupdate."
+log_info "Sistem berhasil diupdate ke repository Debian 13 (Trixie)."
 
 # ==============================================================================
 # TAHAP 2: Nonaktifkan Service Tidak Perlu (Hemat RAM)

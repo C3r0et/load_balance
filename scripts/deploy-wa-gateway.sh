@@ -28,7 +28,7 @@ fi
 # ==============================================================================
 # KONFIGURASI - Sesuaikan bagian ini sebelum deploy
 # ==============================================================================
-GITHUB_REPO="https://github.com/USERNAME/wa-gateway-baileys.git"   # <-- GANTI dengan URL repo GitHub Anda
+GITHUB_REPO="https://github.com/C3r0et/wa-gateway-baileys.git"   # Akun GitHub: C3r0et
 GITHUB_BRANCH="main"                                                  # Branch yang akan di-clone
 APP_DIR="/opt/wa-gateway"
 APP_PORT="3002"

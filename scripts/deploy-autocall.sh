@@ -32,7 +32,7 @@ fi
 # ==============================================================================
 # KONFIGURASI - Sesuaikan bagian ini sebelum deploy
 # ==============================================================================
-GITHUB_REPO="https://github.com/USERNAME/sistem-autocall.git"   # <-- GANTI dengan URL repo Anda
+GITHUB_REPO="https://github.com/C3r0et/sistem-autocall.git"   # Akun GitHub: C3r0et
 GITHUB_BRANCH="main"
 APP_DIR="/opt/autocall"
 APP_PORT="3003"

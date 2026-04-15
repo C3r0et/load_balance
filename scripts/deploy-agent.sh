@@ -26,7 +26,7 @@ if [ "$EUID" -ne 0 ]; then log_error "Jalankan sebagai root: sudo bash deploy-ag
 # KONFIGURASI - Sesuaikan sebelum deploy
 # ==============================================================================
 DASHBOARD_URL="http://192.168.56.250:3005"    # <-- IP Load Balancer PC : port dashboard
-GITHUB_REPO="https://github.com/USERNAME/load_balance.git"  # <-- repo yang berisi folder agent/
+GITHUB_REPO="https://github.com/C3r0et/load_balance.git"  # Akun GitHub: C3r0et
 GITHUB_BRANCH="main"
 AGENT_DIR="/opt/monitor-agent"
 PUSH_INTERVAL="3000"    # ms, push metrics setiap 3 detik

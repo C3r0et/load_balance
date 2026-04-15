@@ -72,8 +72,9 @@ RCS_NODES=(
 RCS_PORT="3000"
 
 LB_PORT="80"
-NGINX_CONF="/etc/nginx/sites-available/cluster.conf"
-NGINX_ENABLED="/etc/nginx/sites-enabled/cluster.conf"
+DASHBOARD_DIR="/opt/cluster-setup/dashboard"
+NGINX_CONF="/etc/nginx/sites-available/ak_loadbalancer"
+NGINX_ENABLED="/etc/nginx/sites-enabled/ak_loadbalancer"
 # ==============================================================================
 
 CURRENT_IP=$(hostname -I | awk '{print $1}')
@@ -340,6 +341,33 @@ cat > /etc/logrotate.d/nginx-cluster << 'EOF'
 EOF
 
 log_info "Logrotate Nginx: simpan 7 hari, dikompresi."
+
+# ==============================================================================
+# TAHAP 5: Setup Monitoring Dashboard
+# ==============================================================================
+log_section "TAHAP 5: Setup Monitoring Dashboard"
+
+# Cari lokasi folder dashboard (asumsi script dijalankan dari repo root)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+DASHBOARD_SRC="$REPO_ROOT/dashboard"
+
+if [ -d "$DASHBOARD_SRC" ]; then
+    log_info "Folder dashboard ditemukan di $DASHBOARD_SRC"
+    cd "$DASHBOARD_SRC"
+    
+    log_info "Installing dashboard dependencies..."
+    npm install --omit=dev
+    
+    log_info "Starting dashboard with PM2..."
+    pm2 delete "monitor-dashboard" 2>/dev/null || true
+    pm2 start server.js --name "monitor-dashboard"
+    pm2 save
+    
+    log_info "✅ Dashboard berhasil dijalankan di port 3005."
+else
+    log_warn "⚠️ Folder dashboard tidak ditemukan di $DASHBOARD_SRC. Lewati setup dashboard."
+fi
 
 # ==============================================================================
 # SELESAI

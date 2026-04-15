@@ -147,41 +147,28 @@ load_balance/
 4. Install Debian (pilih: **Minimal** + **SSH Server** saja)
 5. Setelah install, fix GRUB 32-bit (lihat [Troubleshooting](#-troubleshooting))
 
-### Step 2: Setup Dasar (Semua PC)
+### Step 2: Setup Otomatis (Semua PC)
+Cukup jalankan satu perintah master untuk setup OS dan Role sekaligus:
+
 ```bash
 # Clone repo ini ke Mini PC
-git clone https://github.com/USERNAME/load_balance.git /opt/cluster-setup
+git clone https://github.com/C3r0et/load_balance.git /opt/cluster-setup
+cd /opt/cluster-setup
 
-# Jalankan script setup dasar
-sudo bash /opt/cluster-setup/scripts/setup-base.sh
+# Jalankan Master Installer
+sudo bash install-node.sh
 ```
 
-Script ini akan otomatis:
-- ✅ Update & upgrade sistem
-- ✅ Aktifkan **ZRAM** (kompresi RAM)
-- ✅ Optimasi kernel (`vm.swappiness=10`, `fs.file-max=65535`)
-- ✅ Install **Node.js 20 LTS** via NodeSource
-- ✅ Install & konfigurasi **PM2** + auto-start via Systemd
-- ✅ Setup logrotate untuk PM2
+Script ini akan menanyakan Role PC tersebut:
+1.  **LB** (Load Balancer & Dashboard)
+2.  **WA** (WhatsApp Gateway)
+3.  **RCS** (RCS Message Gateway)
+4.  **CALL** (Autocall SIP System)
 
-### Step 3: Deploy per Role
-
-```bash
-# Load Balancer (1 PC - 192.168.56.250)
-sudo bash scripts/deploy-loadbalancer.sh
-
-# WA Gateway (5 PC - 192.168.56.11-.15)
-sudo bash scripts/deploy-wa-gateway.sh
-
-# Autocall (5 PC - 192.168.56.21-.25)
-sudo bash scripts/deploy-autocall.sh
-
-# RCS Message (5 PC - 192.168.56.31-.35)
-sudo bash scripts/deploy-rcs.sh
-
-# Monitoring Agent (semua PC service)
-sudo bash scripts/deploy-agent.sh
-```
+Script akan otomatis menjalankan:
+- ✅ **setup-base.sh**: Update OS, ZRAM, Node.js, PM2.
+- ✅ **role-script**: Deploy aplikasi sesuai pilihan.
+- ✅ **deploy-agent.sh**: Aktifkan monitoring realtime ke dashboard.
 
 ---
 
