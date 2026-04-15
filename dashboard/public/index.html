@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AKU Infrastructure Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #080b11;
+            --glass: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.09);
+            --green: #00e87a;
+            --red: #ff4455;
+            --yellow: #ffbb00;
+            --blue: #4488ff;
+            --purple: #a855f7;
+            --text: #e2e8f0;
+            --muted: #64748b;
+            --modal-bg: #0f1318;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Outfit',sans-serif; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 32px;
+            background-image:
+                radial-gradient(ellipse at 10% 0%,   rgba(0,232,122,0.07) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 100%, rgba(68,136,255,0.07) 0%, transparent 50%);
+        }
+        .container { max-width: 1440px; margin: 0 auto; }
+
+        /* ─── HEADER ─── */
+        header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:36px; }
+        .brand h1 { font-size:1.8rem; font-weight:700; letter-spacing:-0.5px; }
+        .brand h1 span { background:linear-gradient(90deg,var(--green),var(--blue)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .brand p { font-size:0.8rem; color:var(--muted); margin-top:3px; }
+
+        .header-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .stat-pill { display:flex; align-items:center; gap:7px; padding:7px 14px; border-radius:20px; background:var(--glass); border:1px solid var(--border); font-size:0.82rem; }
+        .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .dot-green  { background:var(--green);  box-shadow:0 0 6px var(--green);  }
+        .dot-red    { background:var(--red);    box-shadow:0 0 6px var(--red);    }
+        .dot-purple { background:var(--purple); box-shadow:0 0 6px var(--purple); }
+
+        .btn { padding:9px 18px; border-radius:10px; border:none; cursor:pointer; font-family:'Outfit',sans-serif; font-weight:600; font-size:0.85rem; transition:all 0.2s; }
+        .btn-primary { background:linear-gradient(135deg,#4488ff,#2255cc); color:#fff; }
+        .btn-primary:hover { opacity:0.85; transform:translateY(-1px); }
+
+        /* ─── SECTION ─── */
+        .section { margin-bottom:44px; }
+        .section-header { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+        .section-header h2 { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); }
+        .section-header::after { content:''; flex:1; height:1px; background:var(--border); }
+        .badge { font-size:0.7rem; padding:3px 10px; border-radius:20px; font-weight:700; }
+        .badge-wa   { background:rgba(0,232,122,0.12); color:var(--green);  border:1px solid rgba(0,232,122,0.25); }
+        .badge-rcs  { background:rgba(68,136,255,0.12); color:var(--blue);  border:1px solid rgba(68,136,255,0.25); }
+        .badge-call { background:rgba(255,187,0,0.12);  color:var(--yellow);border:1px solid rgba(255,187,0,0.25);  }
+
+        /* ─── NODE GRID ─── */
+        .node-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+
+        /* ─── NODE CARD ─── */
+        .node-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(12px);
+            transition: transform 0.25s ease, border-color 0.25s, box-shadow 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+        .node-card::before {
+            content: ''; position:absolute; top:0; left:0; right:0; height:2px;
+            background: transparent; transition: background 0.3s;
+        }
+        .node-card.online::before  { background: linear-gradient(90deg, var(--green), transparent); }
+        .node-card.offline::before { background: linear-gradient(90deg, var(--red),   transparent); }
+        .node-card.has-agent::before { background: linear-gradient(90deg, var(--blue), transparent); }
+        .node-card:hover { transform:translateY(-3px); border-color:rgba(255,255,255,0.18); box-shadow:0 12px 40px rgba(0,0,0,0.3); }
+        .node-card.offline { border-color: rgba(255,68,85,0.25); }
+
+        .card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+        .node-name { font-weight:600; font-size:1rem; }
+        .node-addr { font-size:0.75rem; color:var(--muted); font-family:monospace; margin-bottom:14px; }
+
+        .status-dot { width:10px; height:10px; border-radius:50%; margin-top:4px; flex-shrink:0; position:relative; }
+        .status-dot.online  { background:var(--green); box-shadow:0 0 10px var(--green); }
+        .status-dot.offline { background:var(--red);   box-shadow:0 0 10px var(--red);
+            animation: pulseDot 2s infinite; }
+        .status-dot.unknown { background: var(--muted); }
+        @keyframes pulseDot {
+            0%,100% { box-shadow:0 0 6px var(--red); }
+            50%      { box-shadow:0 0 18px var(--red); }
+        }
+
+        /* ─── RESOURCE BARS ─── */
+        .resource-section { margin-top:14px; border-top:1px solid var(--border); padding-top:14px; }
+        .resource-row { margin-bottom:10px; }
+        .resource-label { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+        .resource-label span:first-child { font-size:0.72rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+        .resource-value { font-size:0.75rem; font-family:monospace; font-weight:600; }
+        .bar-track { height:5px; background:rgba(255,255,255,0.08); border-radius:999px; overflow:hidden; }
+        .bar-fill  { height:100%; border-radius:999px; transition:width 0.6s ease; }
+        .bar-green  { background: linear-gradient(90deg, #00e87a, #00c264); }
+        .bar-yellow { background: linear-gradient(90deg, #ffbb00, #e09900); }
+        .bar-red    { background: linear-gradient(90deg, #ff4455, #cc2233); }
+
+        /* No-agent placeholder */
+        .no-metrics { font-size:0.73rem; color:var(--muted); text-align:center; padding:10px 0; font-style:italic; }
+
+        /* ─── CARD FOOTER ─── */
+        .card-footer { display:flex; justify-content:space-between; align-items:center; margin-top:14px; flex-wrap:wrap; gap:6px; }
+        .latency-badge { font-size:0.75rem; font-family:monospace; }
+        .uptime-badge  { font-size:0.72rem; color:var(--muted); }
+        .btn-del { background:rgba(255,68,85,0.1); border:1px solid rgba(255,68,85,0.25); color:var(--red); border-radius:6px; padding:3px 9px; cursor:pointer; font-size:0.72rem; transition:background 0.2s; }
+        .btn-del:hover { background:rgba(255,68,85,0.25); }
+
+        /* ─── CONNECTED AGENTS BADGE ─── */
+        .agent-indicator { display:inline-flex; align-items:center; gap:5px; font-size:0.7rem; color:var(--blue); }
+        .agent-dot { width:6px; height:6px; border-radius:50%; background:var(--blue); animation:pulse-blue 2s infinite; }
+        @keyframes pulse-blue {
+            0%,100% { opacity:1; } 50% { opacity:0.4; }
+        }
+
+        /* ─── MODAL ─── */
+        .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); z-index:1000; align-items:center; justify-content:center; }
+        .overlay.open { display:flex; }
+        .modal { background:var(--modal-bg); border:1px solid var(--border); border-radius:20px; padding:32px; width:100%; max-width:440px; animation:popIn 0.2s ease; }
+        @keyframes popIn { from { opacity:0; transform:scale(0.95) translateY(-10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+        .modal h2 { font-size:1.2rem; margin-bottom:24px; }
+        .field { margin-bottom:16px; }
+        .field label { display:block; font-size:0.75rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:7px; }
+        .field input, .field select {
+            width:100%; padding:11px 14px; border-radius:10px;
+            background:rgba(255,255,255,0.05); border:1px solid var(--border);
+            color:var(--text); font-family:'Outfit',sans-serif; font-size:0.9rem; outline:none; transition:border-color 0.2s;
+        }
+        .field input:focus, .field select:focus { border-color:var(--blue); }
+        .field select option { background:var(--modal-bg); }
+        .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .modal-btns { display:flex; gap:10px; margin-top:22px; }
+        .btn-sub  { flex:1; padding:12px; border-radius:10px; border:none; background:linear-gradient(135deg,#4488ff,#2255cc); color:#fff; font-family:'Outfit',sans-serif; font-size:0.9rem; font-weight:600; cursor:pointer; transition:opacity 0.2s; }
+        .btn-sub:hover  { opacity:0.85; }
+        .btn-can  { flex:1; padding:12px; border-radius:10px; background:var(--glass); border:1px solid var(--border); color:var(--muted); font-family:'Outfit',sans-serif; font-size:0.9rem; cursor:pointer; transition:background 0.2s; }
+        .btn-can:hover { background:rgba(255,255,255,0.08); }
+
+        /* ─── TOAST ─── */
+        .toast { position:fixed; bottom:80px; right:28px; padding:13px 20px; border-radius:12px; font-size:0.85rem; border:1px solid var(--border); background:#151b25; opacity:0; transform:translateY(8px); transition:all 0.3s; pointer-events:none; z-index:2000; max-width:300px; }
+        .toast.show { opacity:1; transform:translateY(0); }
+        .toast.ok  { border-color:rgba(0,232,122,0.4); color:var(--green); }
+        .toast.err { border-color:rgba(255,68,85,0.4);  color:var(--red);   }
+
+        /* ─── SOUND BTN ─── */
+        .fab { position:fixed; bottom:28px; right:28px; padding:11px 18px; background:var(--glass); border:1px solid var(--border); border-radius:50px; cursor:pointer; backdrop-filter:blur(10px); font-size:0.82rem; z-index:100; transition:background 0.2s; }
+        .fab:hover { background:rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- HEADER -->
+    <header>
+        <div class="brand">
+            <h1>⚡ <span>Infrastructure Monitor</span></h1>
+            <p>Sahabat Sakinah Cluster · real-time node health & resource viewer</p>
+        </div>
+        <div class="header-right">
+            <div class="stat-pill"><div class="dot dot-green"></div><span id="count-online">0</span>&nbsp;Online</div>
+            <div class="stat-pill"><div class="dot dot-red"></div><span id="count-offline">0</span>&nbsp;Offline</div>
+            <div class="stat-pill"><div class="dot dot-purple"></div><span id="count-agents">0</span>&nbsp;Agents</div>
+            <button class="btn btn-primary" id="btn-add">+ Add Node</button>
+        </div>
+    </header>
+
+    <!-- WA GATEWAY -->
+    <div class="section">
+        <div class="section-header">
+            <span class="badge badge-wa">WA</span>
+            <h2>WA Gateway &nbsp;·&nbsp; port 3002</h2>
+        </div>
+        <div class="node-grid" id="group-WA"></div>
+    </div>
+
+    <!-- RCS MESSAGE -->
+    <div class="section">
+        <div class="section-header">
+            <span class="badge badge-rcs">RCS</span>
+            <h2>RCS Message &nbsp;·&nbsp; port 3000</h2>
+        </div>
+        <div class="node-grid" id="group-RCS"></div>
+    </div>
+
+    <!-- AUTOCALL -->
+    <div class="section">
+        <div class="section-header">
+            <span class="badge badge-call">CALL</span>
+            <h2>Autocall &nbsp;·&nbsp; port 3003</h2>
+        </div>
+        <div class="node-grid" id="group-CALL"></div>
+    </div>
+</div>
+
+<!-- MODAL ADD NODE -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>➕ Tambah Node Baru</h2>
+    <div class="field">
+        <label>Nama Node</label>
+        <input id="f-name" type="text" placeholder="contoh: WA Node 6" />
+    </div>
+    <div class="field-row">
+        <div class="field"><label>IP Address</label><input id="f-ip" type="text" placeholder="10.9.9.xx" /></div>
+        <div class="field"><label>Port</label><input id="f-port" type="number" placeholder="3002" /></div>
+    </div>
+    <div class="field">
+        <label>Grup / Service</label>
+        <select id="f-group">
+            <option value="WA">WA Gateway (3002)</option>
+            <option value="RCS">RCS Message (3000)</option>
+            <option value="CALL">Autocall (3003)</option>
+        </select>
+    </div>
+    <div class="modal-btns">
+        <button class="btn-can" id="btn-cancel">Batal</button>
+        <button class="btn-sub" id="btn-submit">Tambah Node</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<button class="fab" id="sound-btn">🔔 Alerts Off</button>
+<audio id="alert-snd" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+let soundEnabled = false;
+let lastOffline = 0;
+// { ip: metrics }
+const metricsStore = {};
+// Track how many agents connected
+let agentCount = 0;
+
+// ─── UTILS ───────────────────────────────────────────────
+function toast(msg, type = 'ok') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `toast ${type} show`;
+    setTimeout(() => el.className = 'toast', 3500);
+}
+function barClass(pct) {
+    if (pct < 60) return 'bar-green';
+    if (pct < 80) return 'bar-yellow';
+    return 'bar-red';
+}
+function valueColor(pct) {
+    if (pct < 60) return 'var(--green)';
+    if (pct < 80) return 'var(--yellow)';
+    return 'var(--red)';
+}
+function fmtMB(mb) {
+    if (mb >= 1024) return (mb/1024).toFixed(1) + ' GB';
+    return mb + ' MB';
+}
+function latencyColor(ms) {
+    if (ms <= 0)   return 'var(--muted)';
+    if (ms < 100)  return 'var(--green)';
+    if (ms < 500)  return 'var(--yellow)';
+    return 'var(--red)';
+}
+
+// ─── MODAL ───────────────────────────────────────────────
+document.getElementById('btn-add').onclick    = () => document.getElementById('overlay').classList.add('open');
+document.getElementById('btn-cancel').onclick = closeModal;
+document.getElementById('overlay').onclick    = e => { if (e.target.id === 'overlay') closeModal(); };
+function closeModal() {
+    document.getElementById('overlay').classList.remove('open');
+    ['f-name','f-ip','f-port'].forEach(id => document.getElementById(id).value = '');
+}
+
+const portMap = { WA: 3002, RCS: 3000, CALL: 3003 };
+document.getElementById('f-group').onchange = e => {
+    document.getElementById('f-port').value = portMap[e.target.value] || '';
+};
+
+document.getElementById('btn-submit').onclick = async () => {
+    const name  = document.getElementById('f-name').value.trim();
+    const ip    = document.getElementById('f-ip').value.trim();
+    const port  = document.getElementById('f-port').value.trim();
+    const group = document.getElementById('f-group').value;
+    if (!name || !ip || !port) return toast('❌ Semua field wajib diisi!', 'err');
+    try {
+        const res  = await fetch('/api/nodes', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,ip,port:+port,group}) });
+        const data = await res.json();
+        res.ok ? (toast(`✅ Node '${name}' ditambahkan!`), closeModal()) : toast(`❌ ${data.error}`, 'err');
+    } catch { toast('❌ Gagal terhubung ke server.', 'err'); }
+};
+
+async function deleteNode(id, name) {
+    if (!confirm(`Hapus node "${name}"?`)) return;
+    try {
+        const res  = await fetch(`/api/nodes/${id}`, { method:'DELETE' });
+        const data = await res.json();
+        res.ok ? toast(`🗑️ '${name}' dihapus.`) : toast(`❌ ${data.error}`, 'err');
+    } catch { toast('❌ Gagal.', 'err'); }
+}
+
+// ─── RENDER NODE CARD ─────────────────────────────────────
+function renderCard(node) {
+    const m   = node.metrics || metricsStore[node.ip] || null;
+    const hasAgent = !!m;
+
+    let metricsHtml = '';
+    if (hasAgent) {
+        const cpuPct  = m.cpu || 0;
+        const ramPct  = m.memory?.percent || 0;
+        const diskPct = m.disk?.percent || 0;
+        const ramUsed = m.memory ? `${fmtMB(m.memory.used)} / ${fmtMB(m.memory.total)}` : '-';
+        const diskUsed= m.disk   ? `${fmtMB(m.disk.used)} / ${fmtMB(m.disk.total)}` : '-';
+
+        metricsHtml = `
+        <div class="resource-section">
+          <div class="resource-row">
+            <div class="resource-label">
+              <span>CPU</span>
+              <span class="resource-value" style="color:${valueColor(cpuPct)}">${cpuPct}%</span>
+            </div>
+            <div class="bar-track"><div class="bar-fill ${barClass(cpuPct)}" style="width:${cpuPct}%"></div></div>
+          </div>
+          <div class="resource-row">
+            <div class="resource-label">
+              <span>RAM</span>
+              <span class="resource-value" style="color:${valueColor(ramPct)}">${ramPct}% <span style="font-weight:400;color:var(--muted);font-size:0.68rem">${ramUsed}</span></span>
+            </div>
+            <div class="bar-track"><div class="bar-fill ${barClass(ramPct)}" style="width:${ramPct}%"></div></div>
+          </div>
+          <div class="resource-row">
+            <div class="resource-label">
+              <span>DISK</span>
+              <span class="resource-value" style="color:${valueColor(diskPct)}">${diskPct}% <span style="font-weight:400;color:var(--muted);font-size:0.68rem">${diskUsed}</span></span>
+            </div>
+            <div class="bar-track"><div class="bar-fill ${barClass(diskPct)}" style="width:${diskPct}%"></div></div>
+          </div>
+          ${m.loadAvg ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:4px">Load: ${m.loadAvg['1m']?.toFixed(2)} · ${m.loadAvg['5m']?.toFixed(2)} · ${m.loadAvg['15m']?.toFixed(2)}</div>` : ''}
+        </div>`;
+    } else {
+        metricsHtml = `<div class="no-metrics">⚙️ Agent belum terhubung</div>`;
+    }
+
+    const latMs   = node.latency || 0;
+    const uptime  = m?.uptime?.human || '';
+    const agentBadge = hasAgent
+        ? `<span class="agent-indicator"><span class="agent-dot"></span>agent live</span>`
+        : '';
+
+    return `
+    <div class="node-card ${node.status} ${hasAgent ? 'has-agent' : ''}" data-id="${node.id}">
+      <div class="card-top">
+        <div>
+          <div class="node-name">${node.name}</div>
+          <div class="node-addr">${node.ip}:${node.port}</div>
+        </div>
+        <div class="status-dot ${node.status}"></div>
+      </div>
+      ${agentBadge}
+      ${metricsHtml}
+      <div class="card-footer">
+        <button class="btn-del" onclick="deleteNode('${node.id}','${node.name}')">✕ Hapus</button>
+        ${uptime ? `<span class="uptime-badge">⏱ ${uptime}</span>` : ''}
+        <span class="latency-badge" style="color:${latencyColor(latMs)}">${latMs > 0 ? latMs+'ms' : '—'}</span>
+      </div>
+    </div>`;
+}
+
+// ─── STATUS UPDATE (dari health check, tiap 5s) ────────────
+socket.on('statusUpdate', (nodeStatus) => {
+    let online = 0, offline = 0;
+    ['WA','RCS','CALL'].forEach(g => document.getElementById(`group-${g}`).innerHTML = '');
+
+    Object.values(nodeStatus).forEach(node => {
+        node.status === 'online' ? online++ : offline++;
+        const container = document.getElementById(`group-${node.group}`);
+        if (!container) return;
+        container.insertAdjacentHTML('beforeend', renderCard(node));
+    });
+
+    document.getElementById('count-online').textContent  = online;
+    document.getElementById('count-offline').textContent = offline;
+
+    if (soundEnabled && offline > lastOffline) document.getElementById('alert-snd').play().catch(()=>{});
+    lastOffline = offline;
+});
+
+// ─── METRICS UPDATE realtime dari agent push ────────────────
+socket.on('metricsUpdate', ({ ip, metrics }) => {
+    metricsStore[ip] = metrics;
+    agentCount = Object.keys(metricsStore).length;
+    document.getElementById('count-agents').textContent = agentCount;
+
+    // Update kartu yang IP-nya cocok tanpa re-render semua
+    document.querySelectorAll('.node-card').forEach(card => {
+        const id = card.dataset.id;
+        // Cari node di DOM berdasarkan IP di node-addr
+        const addr = card.querySelector('.node-addr')?.textContent || '';
+        if (addr.startsWith(ip + ':')) {
+            const statusClass = card.classList.contains('online') ? 'online' : card.classList.contains('offline') ? 'offline' : 'unknown';
+            // Rebuild bar section saja
+            const cpuPct  = metrics.cpu || 0;
+            const ramPct  = metrics.memory?.percent || 0;
+            const diskPct = metrics.disk?.percent || 0;
+            const ramUsed = metrics.memory ? `${fmtMB(metrics.memory.used)} / ${fmtMB(metrics.memory.total)}` : '-';
+            const diskUsed= metrics.disk   ? `${fmtMB(metrics.disk.used)} / ${fmtMB(metrics.disk.total)}` : '-';
+
+            const sec = card.querySelector('.resource-section') || card.querySelector('.no-metrics');
+            if (sec) sec.outerHTML = `
+            <div class="resource-section">
+              <div class="resource-row">
+                <div class="resource-label"><span>CPU</span><span class="resource-value" style="color:${valueColor(cpuPct)}">${cpuPct}%</span></div>
+                <div class="bar-track"><div class="bar-fill ${barClass(cpuPct)}" style="width:${cpuPct}%"></div></div>
+              </div>
+              <div class="resource-row">
+                <div class="resource-label"><span>RAM</span><span class="resource-value" style="color:${valueColor(ramPct)}">${ramPct}% <span style="font-weight:400;color:var(--muted);font-size:0.68rem">${ramUsed}</span></span></div>
+                <div class="bar-track"><div class="bar-fill ${barClass(ramPct)}" style="width:${ramPct}%"></div></div>
+              </div>
+              <div class="resource-row">
+                <div class="resource-label"><span>DISK</span><span class="resource-value" style="color:${valueColor(diskPct)}">${diskPct}% <span style="font-weight:400;color:var(--muted);font-size:0.68rem">${diskUsed}</span></span></div>
+                <div class="bar-track"><div class="bar-fill ${barClass(diskPct)}" style="width:${diskPct}%"></div></div>
+              </div>
+              ${metrics.loadAvg ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:4px">Load: ${metrics.loadAvg['1m']?.toFixed(2)} · ${metrics.loadAvg['5m']?.toFixed(2)} · ${metrics.loadAvg['15m']?.toFixed(2)}</div>` : ''}
+            </div>`;
+        }
+    });
+});
+
+// ─── INITIAL METRICS dari server (saat connect) ────────────
+socket.on('allMetrics', (all) => {
+    Object.assign(metricsStore, all);
+    agentCount = Object.keys(metricsStore).length;
+    document.getElementById('count-agents').textContent = agentCount;
+});
+
+// ─── SOUND ─────────────────────────────────────────────────
+document.getElementById('sound-btn').onclick = () => {
+    soundEnabled = !soundEnabled;
+    document.getElementById('sound-btn').textContent = soundEnabled ? '🔊 Alerts On' : '🔔 Alerts Off';
+    if (soundEnabled) document.getElementById('alert-snd').play().catch(()=>{});
+};
+
+// ─── KEYBOARD SHORTCUTS ────────────────────────────────────
+document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('overlay').classList.contains('open'))
+        document.getElementById('btn-submit').click();
+    if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment files (JANGAN di-push, berisi password!)
+.env
+**/.env
+.env.local
+.env.production
+
+# Data runtime (di-generate otomatis, jangan di-push)
+dashboard/nodes.json
+
+# Log files
+*.log
+logs/
+**/logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Temp
+tmp/
+*.tmp

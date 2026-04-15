@@ -1,0 +1,12 @@
+{
+  "name": "minipc-resource-agent",
+  "version": "1.0.0",
+  "description": "Lightweight resource monitoring agent for Mini PC nodes",
+  "main": "agent.js",
+  "scripts": {
+    "start": "node agent.js"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.2"
+  }
+}
