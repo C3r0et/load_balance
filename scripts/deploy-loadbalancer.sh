@@ -31,40 +31,65 @@ if ! command -v nginx &>/dev/null; then
 fi
 
 # Build Upstreams
-WA_UP=""; for ip in "${WA_NODES[@]}"; do WA_UP+="        server ${ip}:3002 max_fails=3 fail_timeout=30s;\n"; done
-AC_UP=""; for ip in "${AUTOCALL_NODES[@]}"; do AC_UP+="        server ${ip}:3003 max_fails=3 fail_timeout=30s;\n"; done
-RC_UP=""; for ip in "${RCS_NODES[@]}"; do RC_UP+="        server ${ip}:3000 max_fails=3 fail_timeout=30s;\n"; done
+WA_UP=""; for ip in "${WA_NODES[@]}"; do WA_UP+="    server ${ip}:3002 max_fails=3 fail_timeout=30s;\n"; done
+AC_UP=""; for ip in "${AUTOCALL_NODES[@]}"; do AC_UP+="    server ${ip}:3003 max_fails=3 fail_timeout=30s;\n"; done
+RC_UP=""; for ip in "${RCS_NODES[@]}"; do RC_UP+="    server ${ip}:3000 max_fails=3 fail_timeout=30s;\n"; done
 
 cat > "$NGINX_CONF" << EOF
-worker_processes auto;
-events { worker_connections 1024; }
-http {
-    include /etc/nginx/mime.types;
-    sendfile on;
-    keepalive_timeout 65;
-    client_max_body_size 64M;
+# 1. Cluster Upstreams
+upstream wa_gateway_cluster { least_conn; $(printf "$WA_UP") keepalive 32; }
+upstream autocall_cluster { least_conn; $(printf "$AC_UP") keepalive 16; }
+upstream rcs_message_cluster { least_conn; $(printf "$RC_UP") keepalive 16; }
 
-    upstream wa_cluster { least_conn; $(printf "$WA_UP") keepalive 32; }
-    upstream autocall_cluster { least_conn; $(printf "$AC_UP") keepalive 16; }
-    upstream rcs_cluster { least_conn; $(printf "$RC_UP") keepalive 16; }
+# 2. Main Server Block
+server {
+    listen 80;
+    server_name _;
+    add_header X-LB-Node "$CURRENT_IP" always;
 
-    server {
-        listen 80;
-        server_name _;
-        add_header X-LB-Node "$CURRENT_IP" always;
+    # Proxy Headers Global
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
 
-        location /wa/ { proxy_pass http://wa_cluster/; include proxy_params; }
-        location /autocall/ { proxy_pass http://autocall_cluster/; include proxy_params; }
-        location /rcs/ { proxy_pass http://rcs_cluster/; include proxy_params; }
-        location /health { return 200 '{"status":"ok","lb":"$CURRENT_IP"}'; add_header Content-Type application/json; }
-        
-        location / {
-            return 200 '<html><body style="font-family:sans-serif;background:#1a1a2e;color:#eee;padding:40px">
-            <h1>Sahabat Sakinah - Cluster Status</h1>
-            <p>LB IP: $CURRENT_IP</p>
-            </body></html>';
-            add_header Content-Type text/html;
-        }
+    # Routing WA Gateway -> /wa/
+    location /wa {
+        rewrite ^/wa/(.*)$ /\$1 break;
+        proxy_pass http://wa_gateway_cluster;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 300s;
+    }
+
+    # Routing RCS Message -> /rcs/
+    location /rcs {
+        rewrite ^/rcs/(.*)$ /\$1 break;
+        proxy_pass http://rcs_message_cluster;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Routing Autocall -> /autocall/
+    location /autocall {
+        rewrite ^/autocall/(.*)$ /\$1 break;
+        proxy_pass http://autocall_cluster;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    location /health { return 200 '{"status":"ok","lb":"$CURRENT_IP"}'; add_header Content-Type application/json; }
+    
+    location / {
+        return 200 '<html><body style="font-family:sans-serif;background:#1a1a2e;color:#eee;padding:40px">
+        <h1>Sahabat Sakinah - Cluster Status</h1>
+        <p>LB IP: $CURRENT_IP</p>
+        <p>Status: ONLINE</p>
+        </body></html>';
+        add_header Content-Type text/html;
     }
 }
 EOF
