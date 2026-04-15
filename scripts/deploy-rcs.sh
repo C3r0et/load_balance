@@ -28,7 +28,7 @@ fi
 # ==============================================================================
 # KONFIGURASI - Sesuaikan bagian ini sebelum deploy
 # ==============================================================================
-GITHUB_REPO="https://github.com/C3r0et/rcs-message.git"   # Akun GitHub: C3r0et
+GITHUB_REPO="https://github.com/C3r0et/rcs_massage.git"   # Akun GitHub: C3r0et
 GITHUB_BRANCH="main"
 APP_DIR="/opt/rcs-message"
 APP_PORT="3000"

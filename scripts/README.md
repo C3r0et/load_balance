@@ -49,7 +49,7 @@ GITHUB_REPO="https://github.com/USERNAME/sistem-autocall.git"
 
 ### 3. `deploy-rcs.sh`
 ```bash
-GITHUB_REPO="https://github.com/USERNAME/rcs-message.git"
+GITHUB_REPO="https://github.com/USERNAME/rcs_massage.git"
 ```
 
 ### 4. `deploy-loadbalancer.sh`
