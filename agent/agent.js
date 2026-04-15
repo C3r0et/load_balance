@@ -12,6 +12,7 @@
 //   DASHBOARD_URL  : URL dashboard server (default: http://10.9.9.1:3005)
 //   PUSH_INTERVAL  : Interval push dalam ms (default: 3000)
 //   NODE_LABEL     : Label nama node (auto-detect dari hostname jika tidak diset)
+//   NODE_IP        : Paksa gunakan IP ini (opsional)
 // =============================================================================
 
 'use strict';
@@ -24,6 +25,7 @@ const { execSync }  = require('child_process');
 const DASHBOARD_URL   = process.env.DASHBOARD_URL  || 'http://10.9.9.1:3005';
 const PUSH_INTERVAL   = parseInt(process.env.PUSH_INTERVAL || '3000');
 const NODE_LABEL      = process.env.NODE_LABEL     || os.hostname();
+const NODE_IP_OVERRIDE = process.env.NODE_IP;
 
 // =============================================================================
 // Helpers: Baca /proc filesystem (Linux only)
@@ -163,7 +165,7 @@ function getLoadAvg() {
 // =============================================================================
 function collectMetrics() {
     return {
-        nodeIp:   getLocalIP(),
+        nodeIp:   NODE_IP_OVERRIDE || getLocalIP(),
         label:    NODE_LABEL,
         cpu:      getCpuPercent(),
         memory:   getMemoryInfo(),
@@ -177,7 +179,7 @@ function collectMetrics() {
 // =============================================================================
 // Koneksi ke Dashboard via Socket.IO
 // =============================================================================
-const localIP = getLocalIP();
+const localIP = NODE_IP_OVERRIDE || getLocalIP();
 console.log(`[Agent] Starting on ${NODE_LABEL} (${localIP})`);
 console.log(`[Agent] Connecting to dashboard: ${DASHBOARD_URL}`);
 console.log(`[Agent] Push interval: ${PUSH_INTERVAL}ms`);
