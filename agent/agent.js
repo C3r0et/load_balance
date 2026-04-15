@@ -9,7 +9,7 @@
 //   pm2 start agent.js --name "monitor-agent"
 //
 // Konfigurasi via Environment Variables:
-//   DASHBOARD_URL  : URL dashboard server (default: http://10.9.9.1:3005)
+//   DASHBOARD_URL  : URL dashboard server (default: http://192.168.56.250:3005)
 //   PUSH_INTERVAL  : Interval push dalam ms (default: 3000)
 //   NODE_LABEL     : Label nama node (auto-detect dari hostname jika tidak diset)
 //   NODE_IP        : Paksa gunakan IP ini (opsional)
@@ -22,7 +22,7 @@ const os            = require('os');
 const fs            = require('fs');
 const { execSync }  = require('child_process');
 
-const DASHBOARD_URL   = process.env.DASHBOARD_URL  || 'http://10.9.9.1:3005';
+const DASHBOARD_URL   = process.env.DASHBOARD_URL  || 'http://192.168.56.250:3005';
 const PUSH_INTERVAL   = parseInt(process.env.PUSH_INTERVAL || '3000');
 const NODE_LABEL      = process.env.NODE_LABEL     || os.hostname();
 const NODE_IP_OVERRIDE = process.env.NODE_IP;
