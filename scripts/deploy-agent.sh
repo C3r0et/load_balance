@@ -22,6 +22,12 @@ PUSH_INTERVAL="3000"
 
 log_section "Deploy Monitoring Agent"
 
+# Deteksi IP dan hostname
+CURRENT_IP=$(hostname -I | awk '{print $1}')
+HOSTNAME=$(hostname)
+NODE_LABEL="$HOSTNAME"
+
+
 # -- TAHAP 1: Clone/Update --
 log_section "TAHAP 1: Clone/Update Agent"
 if [ -d "$AGENT_DIR/.git" ]; then
